@@ -4589,6 +4589,15 @@ function startApp(){
   setTimeout(()=>loadSites().catch?.(()=>{}),220);
   setTimeout(()=>loadFses().catch?.(()=>{}),400);
 
+  // Director view: warm the Agenda in the background before the user opens it.
+  // Cached Agenda paints instantly; this request only refreshes the saved copy.
+  setTimeout(()=>{
+    try{
+      const p=window.prefetchAgenda?.();
+      if(p&&typeof p.catch==='function')p.catch(()=>{});
+    }catch(e){}
+  },700);
+
   // Do NOT auto-load heavy management datasets.
   // They are fetched only when the user opens a feature that needs them.
 }
@@ -4802,8 +4811,10 @@ async function apiGet(type){
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),30000);
   try{
-    if(!authToken) throw new Error('Please sign in again.');
-    const url=`${API_URL}?type=${encodeURIComponent(type)}&token=${encodeURIComponent(authToken)}`;
+    const publicView=window.VIEW_ONLY_PUBLIC===true;
+    if(!publicView&&!authToken) throw new Error('Please sign in again.');
+    const tokenPart=publicView?'':`&token=${encodeURIComponent(authToken)}`;
+    const url=`${API_URL}?type=${encodeURIComponent(type)}&viewer=1${tokenPart}`;
     const res=await fetch(url,{signal:controller.signal,cache:'no-store'});
     window.opexaTiming.headers(measurement);
     if(!res.ok)throw new Error('Request failed: '+res.status);
@@ -4822,6 +4833,7 @@ async function apiGet(type){
   }
 }
 async function apiPost(action,payload={},options={}){
+  if(window.VIEW_ONLY_PUBLIC===true) throw new Error('View-only access cannot make changes.');
   const source=`POST:${action}`;
   const measurement=window.opexaTiming.start(source);let timingOutcome="error";
   const controller=new AbortController();
@@ -6349,14 +6361,31 @@ document.getElementById('login-btn').addEventListener('click',login);
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 document.getElementById('logout-btn').addEventListener('click',doLogout);
 document.getElementById('fullscreen-btn').addEventListener('click',async()=>{try{if(!document.fullscreenElement){await document.documentElement.requestFullscreen();}else{await document.exitFullscreen();}}catch(e){document.body.classList.toggle('app-fullscreen');}});
-// Normal authenticated startup.
-(async function authenticatedStartup(){
-  const restored = await restoreAuth();
-  if(!restored){
-    document.getElementById('login-screen').style.display='flex';
-    document.getElementById('app-shell').style.display='none';
-    setTimeout(()=>document.getElementById('login-user')?.focus(),50);
-  }
+// View-only startup: open directly with no visible login page.
+(function viewOnlyNoLoginStartup(){
+  const init=()=>{
+    // Director viewer uses the backend's public read-only GET mode.
+    // No fake login token is used; all POST/write operations remain blocked.
+    window.VIEW_ONLY_PUBLIC=true;
+    authToken='';
+    authExpiresAt=0;
+    const viewer={username:'viewer',name:'Management View',role:'management',fse:'',fseName:''};
+    currentUser=viewer;
+    const loginScreen=document.getElementById('login-screen');
+    const appShell=document.getElementById('app-shell');
+    if(loginScreen) loginScreen.style.setProperty('display','none','important');
+    if(appShell) appShell.style.display='block';
+    document.body.classList.add('app-fullscreen','view-only-mode');
+    const lu=document.getElementById('logged-user'); if(lu)lu.textContent='Management View';
+    const lr=document.getElementById('logged-role'); if(lr)lr.textContent='View Only';
+    const mn=document.getElementById('mobile-user-name'); if(mn)mn.textContent='Management View';
+    const ms=document.getElementById('mobile-user-subrole'); if(ms)ms.textContent='View Only';
+    const mr=document.getElementById('mobile-user-role'); if(mr)mr.textContent='View Only';
+    startApp();
+    setTimeout(()=>{try{applyRoleUI();}catch(e){}},0);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
 })();
 
 
@@ -9105,6 +9134,93 @@ if('serviceWorker' in navigator && location.protocol!=='file:') navigator.servic
  observer.observe(grid,{childList:true});grid.querySelectorAll('.site-simple-row').forEach(row=>row.tabIndex=0);
 })();
 </script>
+
+
+<!-- ===== ASSET OPERATIONS: FULL VIEW / ZERO WRITE ===== -->
+<style id="asset-operations-view-only-hardening">
+/* Keep Asset Operations and its read-only navigation visible. */
+body.view-only-mode .tab[data-tab="inventory"],
+body.view-only-mode [data-mobile-tab="inventory"],
+body.view-only-mode #panel-inventory,
+body.view-only-mode #panel-inventory .inventory-subnav,
+body.view-only-mode #panel-inventory [data-inventory-view]{
+  visibility:visible!important;
+  opacity:1!important;
+}
+body.view-only-mode .tab[data-tab="inventory"],
+body.view-only-mode [data-mobile-tab="inventory"]{display:flex!important;}
+
+/* Explicitly remove every known create/edit/write control from Asset Operations. */
+body.view-only-mode #panel-inventory #inventory-add-btn,
+body.view-only-mode #panel-inventory #cabinet-add-btn,
+body.view-only-mode #panel-inventory #movement-add-btn,
+body.view-only-mode #panel-inventory #spare-add-btn,
+body.view-only-mode #panel-inventory #sites-add-lifecycle-btn,
+body.view-only-mode #panel-inventory #sites-manage-lifecycle-btn,
+body.view-only-mode #panel-inventory #inventory-form,
+body.view-only-mode #panel-inventory #cabinet-form,
+body.view-only-mode #panel-inventory #movement-form,
+body.view-only-mode #panel-inventory .planning-form,
+body.view-only-mode #panel-inventory .planning-actions,
+body.view-only-mode #panel-inventory .inventory-form-actions,
+body.view-only-mode #panel-inventory .cabinet-form-actions,
+body.view-only-mode #panel-inventory .movement-form-actions,
+body.view-only-mode #panel-inventory [data-cab-edit],
+body.view-only-mode #panel-inventory [data-cab-delete],
+body.view-only-mode #panel-inventory [data-site-status],
+body.view-only-mode #panel-inventory [data-site-lifecycle],
+body.view-only-mode #panel-inventory .weekly-task-row-actions,
+body.view-only-mode #panel-inventory button[type="submit"]{
+  display:none!important;
+}
+</style>
+<script id="asset-operations-view-only-controller">
+(function(){
+  'use strict';
+  const panel=()=>document.getElementById('panel-inventory');
+  const mutatingAction=/^(?:add|edit|delete|remove|save|create|manage|update|use|deduct|return|reset|archive|void|assign|transfer|record\s+movement|change\s+status|save\s+status|close\s+site|reopen)(?:|\s|$)/i;
+  const mutatingIds=new Set([
+    'inventory-add-btn','cabinet-add-btn','movement-add-btn','spare-add-btn',
+    'sites-add-lifecycle-btn','sites-manage-lifecycle-btn','inventory-save-btn',
+    'cabinet-save-btn','movement-save-btn','spare-save-btn'
+  ]);
+
+  function lockAssetWrites(){
+    const root=panel(); if(!root)return;
+    root.querySelectorAll('button,[role="button"]').forEach(btn=>{
+      /* Keep read-only navigation and inspection controls. */
+      if(btn.closest('.inventory-subnav'))return;
+      const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
+      if(/^(?:view|open|history|cabinets|profile|details|refresh|current|closed|all|search|filter|back|close|copy|download|export)/i.test(txt))return;
+      if(mutatingIds.has(btn.id)||mutatingAction.test(txt)||btn.matches('[data-cab-edit],[data-cab-delete],[data-site-status],[data-site-lifecycle]')){
+        btn.style.setProperty('display','none','important');
+      }
+    });
+    root.querySelectorAll('form').forEach(form=>{
+      if(form.closest('.inventory-filter,.inventory-toolbar,.search-row'))return;
+      if(form.querySelector('button[type="submit"]')) form.querySelectorAll('button[type="submit"]').forEach(b=>b.style.setProperty('display','none','important'));
+    });
+  }
+
+  /* Final browser-side guard: even dynamically-created Asset Operations controls cannot write. */
+  document.addEventListener('click',function(e){
+    const root=panel(); if(!root||!root.contains(e.target))return;
+    const btn=e.target.closest('button,[role="button"]'); if(!btn)return;
+    if(btn.closest('.inventory-subnav'))return;
+    const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
+    if(mutatingIds.has(btn.id)||mutatingAction.test(txt)||btn.matches('[data-cab-edit],[data-cab-delete],[data-site-status],[data-site-lifecycle]')){
+      e.preventDefault();e.stopImmediatePropagation();
+      if(typeof showToast==='function')showToast('View only','Asset Operations is available for viewing only.','bad');
+    }
+  },true);
+
+  const observer=new MutationObserver(lockAssetWrites);
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  lockAssetWrites();
+  setTimeout(lockAssetWrites,100);
+  setTimeout(lockAssetWrites,800);
+})();
+</script>
 </html>
 
 
@@ -9256,8 +9372,9 @@ window.addEventListener('DOMContentLoaded',()=>{
  let agendaRows=[],editingId='',agendaLoadedAt=0,agendaLoadInFlight=null,agendaCacheRestored=false;
  const AGENDA_CACHE_PREFIX='fo-agenda-cache-v1:';
  function agendaCacheKey(){
-  const userKey=String(currentUser?.username||currentUser?.name||currentUser?.fse||'shared').trim().toLowerCase();
-  return AGENDA_CACHE_PREFIX+userKey;
+  // View-only users all read the same Agenda dataset. Reuse the last good copy
+  // on this browser even when a different management account signs in.
+  return AGENDA_CACHE_PREFIX+'view-only-shared';
  }
  function saveAgendaCache(){
   try{localStorage.setItem(agendaCacheKey(),JSON.stringify({rows:agendaRows,savedAt:agendaLoadedAt||Date.now()}));}catch(e){console.warn('Agenda cache save skipped:',e);}
@@ -9275,9 +9392,9 @@ window.addEventListener('DOMContentLoaded',()=>{
  }
  function read(week){return agendaRows.filter(row=>String(row.week||'')===String(week||''));}
  async function loadAgenda(force=false,quiet=false){
-  if(!authToken)return agendaRows;
+  if(!authToken&&window.VIEW_ONLY_PUBLIC!==true)return agendaRows;
   if(!agendaCacheRestored)restoreAgendaCache();
-  if(!force&&agendaLoadedAt&&Date.now()-agendaLoadedAt<60000){buildWeeks();renderList();renderReportTasks();status.textContent='Agenda ready.';return agendaRows;}
+  if(!force&&agendaLoadedAt&&Date.now()-agendaLoadedAt<300000){buildWeeks();renderList();renderReportTasks();status.textContent='Agenda ready.';return agendaRows;}
   if(agendaLoadInFlight)return agendaLoadInFlight;
   status.textContent=quiet&&agendaCacheRestored?'Agenda ready. Syncing…':'Loading agenda from Google Sheets…';
   agendaLoadInFlight=apiGet('agenda').then(rows=>{
@@ -9330,6 +9447,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  form.addEventListener('submit',async event=>{event.preventDefault();const text=input.value.trim();if(!text)return;const submit=form.querySelector('button[type="submit"]'),week=weekSelect.value,originalId=editingId,wasEdit=!!originalId,before=agendaRows.slice(),existing=agendaRows.find(row=>String(row.id)===String(originalId)),temporaryId=originalId||('PENDING-'+crypto.randomUUID());const optimistic={...(existing||{}),id:temporaryId,week,text,owner:existing?.owner||currentUser?.name||currentUser?.fse||currentUser?.username||'User',createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};agendaRows=wasEdit?agendaRows.map(row=>String(row.id)===String(originalId)?optimistic:row):[optimistic,...agendaRows];editingId='';input.value='';renderList();renderReportTasks();submit.disabled=true;status.textContent='Saving to Google Sheets…';try{const result=await apiPost('saveAgendaItem',{record:{id:originalId||'',week,text}});const saved=result?.record||optimistic;agendaRows=agendaRows.map(row=>String(row.id)===String(temporaryId)?saved:row);agendaLoadedAt=Date.now();saveAgendaCache();renderList();renderReportTasks();status.textContent=wasEdit?'Agenda changes saved.':'Agenda item saved.';showToast(wasEdit?'Agenda updated':'Agenda saved',periodKeyFns().label(week));}catch(error){agendaRows=before;editingId=originalId;input.value=text;renderList();form.hidden=false;status.textContent=error.message||'Google Sheets did not confirm the save.';showToast('Agenda not saved',status.textContent,'bad');}finally{submit.disabled=false;}});
  const previousRender=window.renderReport;window.renderReport=function(...args){const result=previousRender.apply(this,args);renderReportTasks();return result;};
  window.renderWeeklyTasks=()=>{restoreAgendaCache();return loadAgenda(false,true);};
+ window.prefetchAgenda=()=>{restoreAgendaCache();return loadAgenda(false,true);};
  const previousShowApp=showApp;showApp=function(user){const result=previousShowApp(user);restoreAgendaCache();return result;};
  if(currentUser)restoreAgendaCache();else renderReportTasks();
 });
@@ -9370,6 +9488,11 @@ window.addEventListener('DOMContentLoaded',()=>{
 </script>
 
 
+
+<style id="view-only-no-login-hardening">
+#login-screen{display:none!important}
+body.view-only-mode #logout-btn,body.view-only-mode #mobile-logout-btn{display:none!important}
+</style>
 <!-- ===== OPEXA VIEW-ONLY BUILD ===== -->
 <style id="opexa-view-only-style">
   body.view-only-mode .tab[data-tab="log"],
