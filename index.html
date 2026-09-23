@@ -9189,7 +9189,7 @@ body.view-only-mode #panel-inventory button[type="submit"]{
     const root=panel(); if(!root)return;
     root.querySelectorAll('button,[role="button"]').forEach(btn=>{
       /* Keep read-only navigation and inspection controls. */
-      if(btn.closest('.inventory-subnav'))return;
+      if(btn.closest('.inventory-subnav,#asset-groups'))return;
       const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
       if(/^(?:view|open|history|cabinets|profile|details|refresh|current|closed|all|search|filter|back|close|copy|download|export)/i.test(txt))return;
       if(mutatingIds.has(btn.id)||mutatingAction.test(txt)||btn.matches('[data-cab-edit],[data-cab-delete],[data-site-status],[data-site-lifecycle]')){
@@ -9206,11 +9206,11 @@ body.view-only-mode #panel-inventory button[type="submit"]{
   document.addEventListener('click',function(e){
     const root=panel(); if(!root||!root.contains(e.target))return;
     const btn=e.target.closest('button,[role="button"]'); if(!btn)return;
-    if(btn.closest('.inventory-subnav'))return;
+    if(btn.closest('.inventory-subnav,#asset-groups'))return;
     const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
     if(mutatingIds.has(btn.id)||mutatingAction.test(txt)||btn.matches('[data-cab-edit],[data-cab-delete],[data-site-status],[data-site-lifecycle]')){
       e.preventDefault();e.stopImmediatePropagation();
-      if(typeof showToast==='function')showToast('View only','Asset Operations is available for viewing only.','bad');
+      /* Read-only action blocked silently. */
     }
   },true);
 
@@ -9576,7 +9576,7 @@ body.view-only-mode #logout-btn,body.view-only-mode #mobile-logout-btn{display:n
     apiPost=async function(action,payload={},options={}){
       if(!READ_POST_ACTIONS.has(String(action||''))){
         const err=new Error('View-only mode: changes are disabled in this build.');
-        if(typeof showToast==='function') showToast('View only','Changes are disabled in this version.','bad');
+        /* Read-only write request blocked silently. */
         throw err;
       }
       return readPost(action,payload,options);
@@ -9591,7 +9591,7 @@ body.view-only-mode #logout-btn,body.view-only-mode #mobile-logout-btn{display:n
   function hideMutatingButtons(root=document){
     root.querySelectorAll?.('button, [role="button"]').forEach(btn=>{
       if(isAllowedNav(btn)) return;
-      if(btn.closest('.inventory-subnav,.report-subnav,.period-types,.work-toggle')) return;
+      if(btn.closest('.inventory-subnav,#asset-groups,.report-subnav,.period-types,.work-toggle')) return;
       if(btn.id==='fullscreen-btn'||btn.id==='logout-btn'||btn.id==='mobile-logout-btn'||btn.id==='mobile-menu-btn'||btn.id==='mobile-menu-close') return;
       const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
       // Generic Close buttons, View/History/Cabinets, refresh, export/print/download and copy remain usable.
@@ -9669,11 +9669,10 @@ body.view-only-mode #logout-btn,body.view-only-mode #mobile-logout-btn{display:n
       }
     }
     const btn=e.target.closest('button,[role="button"]');
-    if(!btn||isAllowedNav(btn)) return;
+    if(!btn||isAllowedNav(btn)||btn.closest('#asset-groups,.inventory-subnav,.report-subnav,.period-types,.work-toggle')) return;
     const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
     if(MUTATION_WORDS.test(txt)||/^(?:duplicate|move|log new visit|log visit)/i.test(txt)){
       e.preventDefault();e.stopImmediatePropagation();
-      if(typeof showToast==='function') showToast('View only','Changes are disabled in this version.','bad');
     }
   },true);
 
