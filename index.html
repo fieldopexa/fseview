@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- VIEW ONLY V34: compatible with Master v33 smart visit-type flow -->
+
 <html lang="en">
 <head>
   <link rel="manifest" href="manifest.webmanifest">
@@ -5160,7 +5162,7 @@ function visitDetailLayout(e,fields,tracking){
 function openDetail(id){
   const e=entries.find(x=>String(x.id)===String(id)); if(!e) return;
   const m=computeTrackingMap()[e.id]||'-';
-  const fields=[['Tracking #',m],['Ticket / Incident #',e.ticketNo||'—'],['Date',e.date||'—'],['Primary FSE',e.tech||'—'],['With / Supporting FSEs',parseSupportingFses(e.supportingFses).join(', ')||'—'],['Site',e.site||'—'],['Visit Type',e.visitType||'—'],['General Activity',e.generalType||'—'],['Category',catLabel[e.category]||e.category||'—'],['Issue Type',e.issueType||e.generalType||'—'],['Priority',e.priority||'—'],['Status',e.status||'—'],['Time In',e.timeIn||'—'],['Time Out',e.timeOut||'—'],['Duration',formatMinutes(minutesBetween(e.timeIn,e.timeOut))],['Time Resolved',e.timeResolved||'—'],['Visit / Support Mode',e.resolvedVia||'—'],['Follow-up Date',e.followupDate||'—'],['Follow-up Reason',e.followupReason||'—'],['Parts / Materials',e.parts||'—'],['Issue / Notes',e.notes||'—'],['Resolution / Action Taken',e.resolution||'—'],['Resolution Type',e.resolutionType||'—'],['Machine / Equipment',e.machineNo||'—'],['Component',e.component||'—'],['Serial / Asset #',e.assetNo||'—'],['Last Updated',e.updatedAt?new Date(e.updatedAt).toLocaleString():'—']];
+  const fields=[['Tracking #',m],['Ticket / Incident #',e.ticketNo||'—'],['Date',e.date||'—'],['Primary FSE',e.tech||'—'],['With / Supporting FSEs',parseSupportingFses(e.supportingFses).join(', ')||'—'],['Site',e.site||'—'],['Visit Type',e.visitType||'—'],['General Activity',e.generalType||'—'],['Category',catLabel[e.category]||e.category||e.visitType||'—'],['Issue / Activity',e.issueType||e.generalType||e.visitType||'—'],['Priority',e.priority||'—'],['Status',e.status||'—'],['Time In',e.timeIn||'—'],['Time Out',e.timeOut||'—'],['Duration',formatMinutes(minutesBetween(e.timeIn,e.timeOut))],['Time Resolved',e.timeResolved||'—'],['Visit / Support Mode',e.resolvedVia||'—'],['Follow-up Date',e.followupDate||'—'],['Follow-up Reason',e.followupReason||'—'],['Parts / Materials',e.parts||'—'],['Issue / Notes',e.notes||'—'],['Resolution / Action Taken',e.resolution||'—'],['Resolution Type',e.resolutionType||'—'],['Machine / Equipment',e.machineNo||'—'],['Component',e.component||'—'],['Serial / Asset #',e.assetNo||'—'],['Last Updated',e.updatedAt?new Date(e.updatedAt).toLocaleString():'—']];
   document.getElementById('drawer-kicker').textContent=(e.status||'FIELD VISIT').toUpperCase(); document.getElementById('drawer-title').textContent=e.site||'Visit details';
   document.getElementById('drawer-content').innerHTML=visitDetailLayout(e,fields,m);
   document.getElementById('detail-overlay').querySelector('.detail-drawer').scrollTop=0;
@@ -6007,7 +6009,7 @@ function renderReadableLog(e,tracking){
  const status=e.status||'Unspecified';const statusClass=status==='Resolved'?'resolved':status==='Pending'?'pending':status==='Follow-up'?'followup':'neutral';
  const issue=e.issueType||e.generalType||e.visitType||'Field visit';
  return `<article class="entry fieldlog-card readable-log" data-calm="true" data-entry-id="${safe(String(e.id))}">
-  <div class="readable-log-top"><span class="readable-log-category">${safe(catLabel[e.category]||e.category||'General')}</span><span class="readable-log-status ${statusClass}"><i aria-hidden="true"></i>${safe(status)}</span></div>
+  <div class="readable-log-top"><span class="readable-log-category">${safe(catLabel[e.category]||e.category||e.visitType||'Visit')}</span><span class="readable-log-status ${statusClass}"><i aria-hidden="true"></i>${safe(status)}</span></div>
   <div class="readable-log-content"><div class="readable-log-main"><button type="button" class="readable-log-site" onclick="event.stopPropagation();openSiteProfile('${escapeJs(e.site)}')">${safe(e.site||'Site not specified')}</button><div class="readable-log-issue">${safe(issue)}</div>${e.notes?`<p class="readable-log-note">${safe(e.notes)}</p>`:''}</div>
   <div class="readable-log-context"><span><small>Visit date</small>${safe(fieldLogDateParts(e.date).main)}</span><span><small>Technician</small>${safe(entryTeamLabel(e)||'Unassigned')}</span></div></div>
   <div class="readable-log-footer"><div class="readable-log-reference"><span>Visit #${safe(String(tracking||'—'))}</span>${e.ticketNo?`<span>Ticket ${safe(e.ticketNo)}</span>`:''}${['Critical','High'].includes(e.priority)?`<span class="readable-log-urgent">${safe(e.priority)} priority</span>`:''}</div>
@@ -8407,7 +8409,7 @@ function reportVenueNotes(rows){
 
 function reportVisitRows(rows){
  return rows.filter(e=>e.status!=='Voided').slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.site||'').localeCompare(String(b.site||''))).map(e=>
-  '<tr><td>'+escapeHtml(e.date?fieldLogDateParts(e.date).main:'Date not recorded')+'</td><td><b>'+escapeHtml(e.site||'Venue not recorded')+'</b></td><td>'+escapeHtml(catLabel[e.category]||e.category||'Unspecified')+'</td><td class="visit-remarks">'+escapeHtml(e.notes||e.remarks||'No remarks recorded.')+'</td><td class="visit-remarks">'+escapeHtml(e.resolution||'No action recorded.')+'</td></tr>'
+  '<tr><td>'+escapeHtml(e.date?fieldLogDateParts(e.date).main:'Date not recorded')+'</td><td><b>'+escapeHtml(e.site||'Venue not recorded')+'</b></td><td>'+escapeHtml(catLabel[e.category]||e.category||e.visitType||'Unspecified')+'</td><td class="visit-remarks">'+escapeHtml(e.notes||e.remarks||'No remarks recorded.')+'</td><td class="visit-remarks">'+escapeHtml(e.resolution||'—')+'</td></tr>'
  ).join('');
 }
 
