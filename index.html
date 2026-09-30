@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- VIEW ONLY V35: permanent cabinet numbering compatible -->
 <!-- VIEW ONLY V34: compatible with Master v33 smart visit-type flow -->
 
 <html lang="en">
@@ -6837,7 +6838,7 @@ function renderCabinets(){
     body.innerHTML=groupNames.map(group=>{
       const groupKey='cabgrp-'+btoa(unescape(encodeURIComponent(group))).replace(/[^a-zA-Z0-9]/g,'');
       const groupRows=grouped[group].map(r=>`<tr class="cabinet-group-item" data-cab-parent="${groupKey}">
-        <td><button class="cabinet-link" data-cab-profile="${escapeHtml(r.id)}">${escapeHtml(r.cabinetId||'—')}</button><div class="muted">${escapeHtml(r.label||'')}</div></td>
+        <td><button class="cabinet-link" data-cab-profile="${escapeHtml(r.id)}">${escapeHtml(r.cabinetId||'—')}</button><div class="muted">${r.permanentNumber?'Cabinet #'+escapeHtml(String(r.permanentNumber).padStart(3,'0')):''}${r.label?(r.permanentNumber?' · ':'')+escapeHtml(r.label):''}</div></td>
         <td>${escapeHtml(canonicalCabinetSite(r,siteMap)||'—')}</td>
         <td>${cabinetStatusMarkup(r)}</td>
         <td>${escapeHtml(r.cabinetSerial||'—')}</td>
@@ -7251,8 +7252,9 @@ function openCabinetProfile(id){
   const content=document.getElementById('cabinet-profile-content');
   title.textContent=cab.cabinetId||cab.label||'Cabinet profile';
   sub.textContent=(cab.site||'Unknown site')+' · '+(cab.status||'No status');
+  const permanentDisplay=cab.permanentNumber?('Cabinet #'+String(cab.permanentNumber).padStart(3,'0')):'—';
   const details=[
-    ['Cabinet label',cab.label||'—'],['Site / Location',cab.site||'—'],['Status',cab.status||'—'],
+    ['Permanent Cabinet No.',permanentDisplay],['Current Cabinet Name / ID',cab.cabinetId||'—'],['Cabinet label',cab.label||'—'],['Site / Location',cab.site||'—'],['Status',cab.status||'—'],
     ['Cabinet Serial',cab.cabinetSerial||'—'],...(currentUser?.role==='management'?[['Opexa / Game Token',cab.token||'—']]:[]),['TeamViewer ID',cab.teamviewerId||'—'],['System / MPU Serial',cab.mpuSerial||'—'],
     ['Bill Validator', [cab.bvModel,cab.bvSerial].filter(Boolean).join(' · ')||'—'],
     ['Printer', [cab.printerModel,cab.printerSerial].filter(Boolean).join(' · ')||'—'],
@@ -7263,7 +7265,7 @@ function openCabinetProfile(id){
   const rows=history.length?history.slice(0,20).map(e=>`<div class="cabinet-history-row" data-cab-visit="${escapeHtml(e.id)}"><div class="cabinet-history-date">${escapeHtml(e.date||'—')}</div><div><b>${escapeHtml(catLabel[e.category]||e.category||e.visitType||'Visit')}</b><div class="cabinet-history-meta">${escapeHtml(e.notes||e.resolution||'No visit notes')}</div>${e.parts?`<div class="cabinet-history-parts">Parts / Materials: ${escapeHtml(e.parts)}</div>`:''}</div><div>${escapeHtml(e.tech||'—')}<div class="cabinet-history-meta">${escapeHtml(e.component||e.assetNo||'')}</div></div><div><span class="status-pill status-${String(e.status||'').replace(' ','')}">${escapeHtml(e.status||'—')}</span></div></div>`).join(''):`<div class="cabinet-history-empty">No field visits are linked to this cabinet yet. To link future visits automatically, use the Cabinet ID <b>${escapeHtml(cab.cabinetId||'')}</b> in the “Machine / Equipment” field when logging a visit.</div>`;
   const repeatNote=repeat30>=3?`<div class="cabinet-history-note">⚠️ <b>Repeat activity detected:</b> this cabinet appears in ${repeat30} field visits within the last 30 days${mostCommon?` · most common: ${escapeHtml(mostCommon[0])}`:''}.</div>`:'';
   content.innerHTML=`
-    <div class="cabinet-profile-top"><div><div class="cabinet-profile-id">${escapeHtml(cab.cabinetId||'—')}</div><div class="cabinet-profile-site">${escapeHtml(cab.label||'')} ${cab.label?'· ':''}${escapeHtml(cab.site||'—')}</div></div><span class="inventory-status">${escapeHtml(cab.status||'—')}</span></div>
+    <div class="cabinet-profile-top"><div><div class="cabinet-profile-id">${escapeHtml(cab.cabinetId||'—')}</div><div class="cabinet-profile-site">${cab.permanentNumber?'Cabinet #'+escapeHtml(String(cab.permanentNumber).padStart(3,'0'))+' · ':''}${escapeHtml(cab.label||'')}${cab.label?' · ':''}${escapeHtml(cab.site||'—')}</div></div><span class="inventory-status">${escapeHtml(cab.status||'—')}</span></div>
     <div class="cabinet-profile-kpis">
       <div class="cabinet-kpi"><label>Total service visits</label><b>${history.length}</b><small>linked field logs</small></div>
       <div class="cabinet-kpi"><label>Open concerns</label><b>${open}</b><small>pending / monitoring</small></div>
