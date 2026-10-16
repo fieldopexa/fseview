@@ -6,7 +6,7 @@
 
 <html lang="en">
 <head>
-  <link rel="manifest" href="manifest.webmanifest">
+  
   <meta name="theme-color" content="#10151d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3517,6 +3517,13 @@ window.addEventListener('DOMContentLoaded',()=>{
 .brief-site-register .visit-remarks-table td:nth-child(5){width:25%!important;}
 .brief-site-register .visit-remarks-table td:first-child{white-space:nowrap!important;}
 </style>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Opexa View">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./install.css">
+<script defer src="./install.js"></script>
 </head>
 <body>
 <div class="login-screen" id="login-screen">
@@ -9258,9 +9265,7 @@ html{scrollbar-gutter:stable}
 })();
 </script>
 </body>
-<script>
-if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
-</script>
+
 <style id="visit-site-options-cleanup">
 #add-site-btn,#add-site-row{display:none!important}
 .warehouse-directory-badge{display:inline-block;width:fit-content;padding:2px 7px;margin:4px 0;border:1px solid var(--line);border-radius:5px;font-size:10px;color:var(--ink-soft);background:var(--accent-soft)}
