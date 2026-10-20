@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const context={URL,document:{baseURI:'https://fieldopexa.github.io/fseview/'},catLabel:{Hardware:'Hardware'},escapeHtml:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')};
+vm.createContext(context);vm.runInContext(fs.readFileSync(__dirname+'/service-form-view.js','utf8'),context);
+const image='data:image/png;base64,aGVsbG8=';
+const form={technician:'Ian',checkedBy:'Ian',cashier:'Cashier',venueManager:'Manager',pagcorRepresentative:'Representative',signatures:Object.fromEntries(['checkedBy','cashier','venueManager','pagcorRepresentative'].map(key=>[key,{image}]))};
+const entry={site:'Test Site',date:'2026-10-20',category:'Hardware',issueType:'Logic Unit',notes:'<unsafe>',resolution:'Replaced unit',serviceForm:JSON.stringify(form)};
+const decoded=context.serviceFormForEntry(entry),html=context.serviceFormDocument(entry,decoded);
+assert.ok(html.includes('Ian Ronquillo'));
+assert.ok(html.includes('https://fieldopexa.github.io/fseview/service-form-reference.png'));
+assert.equal((html.match(/class="signature-image"/g)||[]).length,4);
+assert.ok(html.includes('&lt;unsafe>'));assert.ok(html.includes('Hardware — Logic Unit'));
+const content={scrollWidth:1028,scrollHeight:15000,style:{}},page={clientWidth:1028,clientHeight:699};
+const scale=context.fitServiceFormPage({getElementById:id=>id==='service-print-page'?page:content});
+assert.ok(content.scrollHeight*scale<page.clientHeight);
+console.log('PASS: public viewer form rendering, four signatures, original logo, full names and single-page fitting');
