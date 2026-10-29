@@ -1,0 +1,25 @@
+/* Public FSE View navigation gateways, matching FSM surface colors. */
+.fse-signin-section{display:flex;flex-direction:column;gap:5px;padding:6px 0 9px;margin-bottom:10px;border-bottom:1px solid var(--line,#2c313a)}
+.fse-signin-section .nav-section-label{padding:9px 11px;font-size:10px;letter-spacing:.11em;color:var(--ink-soft,#9aa4b1)}
+.fse-signin-nav{display:flex;align-items:center;width:100%;gap:10px;min-height:41px;padding:9px 11px;color:#e5e9f2;background:transparent;border:1px solid transparent;border-radius:9px;font-size:12px;text-align:left;cursor:pointer}
+.fse-signin-nav:hover,.fse-signin-mobile:hover{background:#272d38;border-color:#3b4657}
+.fse-signin-nav .fse-signin-icon,.fse-signin-mobile .fse-signin-icon{display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px}
+.fse-signin-nav .fse-signin-icon svg,.fse-signin-mobile .fse-signin-icon svg{width:19px;height:19px}
+.fse-signin-lock{margin-left:auto;color:#9da9bd;font-size:12px}
+.fse-signin-mobile-section{display:flex;flex-direction:column;gap:3px;padding:8px 8px 14px;border-bottom:1px solid var(--line,#2c313a);margin-bottom:6px}
+.fse-signin-mobile-caption{display:block;padding:7px 10px;color:#8e9ba9;font-size:10px;letter-spacing:.10em;font-weight:700}
+.fse-signin-mobile{display:flex;align-items:center;gap:11px;min-height:46px;width:100%;padding:12px 13px;border-radius:9px;border:1px solid transparent;background:#202731;color:#e5e9f2;text-align:left;font-size:12px;cursor:pointer}
+.fse-signin-mobile .fse-signin-lock{margin-left:auto}
+.fse-signin-overlay[hidden]{display:none!important}
+.fse-signin-overlay{position:fixed;inset:0;z-index:1800;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(5,8,12,.77)}
+.fse-signin-dialog{position:relative;width:min(440px,100%);max-height:90dvh;overflow:auto;padding:29px;background:#171c24;border:1px solid #3f4c63;border-radius:15px;box-shadow:0 28px 90px rgba(0,0,0,.55);color:#edf2fb;font-family:'Segoe UI',system-ui,sans-serif}
+.fse-signin-kicker{font-size:10px;letter-spacing:.12em;color:#9fb2d5;font-weight:700}
+.fse-signin-dialog h2{font-size:24px;font-weight:700;letter-spacing:-.035em;line-height:1.25;margin:10px 0}
+.fse-signin-dialog p{font-size:13px;color:#b2bfd1;line-height:1.65;margin:0 0 22px}
+.fse-signin-dismiss{position:absolute;top:13px;right:15px;display:grid;place-items:center;width:35px;height:35px;border:0;border-radius:8px;color:#b9c6d8;background:#27303e;font-size:23px;cursor:pointer}
+.fse-signin-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.fse-signin-actions a,.fse-signin-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 15px;border-radius:9px;font-size:12px;font-weight:700;text-decoration:none}
+.fse-signin-secondary{border:1px solid #404b5b;background:transparent;color:#ccd5e5;cursor:pointer}
+.fse-signin-primary{background:#9aaef5;border:1px solid #9aaef5;color:#17233d!important;cursor:pointer}
+.fse-signin-overlay :is(button,a):focus-visible,.fse-signin-nav:focus-visible,.fse-signin-mobile:focus-visible{outline:2px solid #bfd0ff;outline-offset:3px}
+@media(max-width:900px){.fse-signin-section{display:none}.fse-signin-dialog{padding:24px}.fse-signin-actions{flex-direction:column-reverse}.fse-signin-actions>*{width:100%}}
