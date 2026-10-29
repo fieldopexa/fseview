@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('node:fs');
+const assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const js=fs.readFileSync('fse-signin-links.js','utf8');
+const css=fs.readFileSync('fse-signin-links.css','utf8');
+assert.match(html,/fse-signin-links\.js\?v=20261029/,'Viewer loads the login gateways');
+assert.match(html,/fse-signin-links\.css\?v=20261029/,'Viewer loads styles');
+assert.match(js,/https:\/\/fieldopexa\.github\.io\/io\//,'Only official full FSM is used');
+assert.match(js,/searchParams\.set\('intent',intent\)/,'Deep links request exact intent');
+assert.match(js,/messages:'messages',newvisit:'newvisit'/,'Both login gateways available');
+assert.match(js,/data-fse-signin/,'Buttons are wired');
+assert.match(js,/openPrompt\(intent\)/,'User gets sign-in prompt before redirect');
+assert.match(js,/Not now/,'User can cancel');
+assert.match(js,/No credential fields, tokens, or write APIs/,'Public access remains read-only');
+assert.match(css,/fse-signin-overlay\[hidden\]/,'Modal defaults hidden');
+console.log('FSE View login gateways validated.');
