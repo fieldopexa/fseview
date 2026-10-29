@@ -1,0 +1,14 @@
+name: Validate FSE View Sign-In Gateways
+on:
+  push:
+    branches: [feature/fsm-sign-in-actions-20261029, main]
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: node --check fse-signin-links.js
+      - name: Validate viewer routing and login gates
+        run: node fse-signin-links.test.cjs
